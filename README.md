@@ -5,4 +5,5 @@
 - [ ] Model joint parts
 - [ ] Model screws and nuts
 - [ ] Design arm
+- [ ] Fix PCA9685 model
 
