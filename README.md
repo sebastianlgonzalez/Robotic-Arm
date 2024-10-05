@@ -1,9 +1,8 @@
 # TO-DO
 
 - [x] Add beveled plugs on all pieces
-- [ ] Find best mm tolerance for servo stand
 - [x] Model joint parts
-- [ ] Model screws and nuts
-- [ ] Design arm
-- [ ] Fix PCA9685 model
+- [ ] Design arm shape
 
+- [ ] Fix PCA9685 model (optional)
+- [ ] Model screws and nuts (optional)
