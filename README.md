@@ -1,8 +1,14 @@
-# TO-DO
+# **TO-DO**
 
-- [x] Add beveled plugs on all pieces
-- [x] Model joint parts
-- [X] Design arm shape
+---
 
-- [ ] Fix PCA9685 model (optional)
-- [ ] Model screws and nuts (optional)
+## 🛠️ Arm Design
+- [ ] Make arm smoother and uniform.
+- [ ] Create way for arm segments to connect to servos.
+- [ ] Figure out ways to reduce plastic in the arm design, such as using hollow or honeycomb patterns.
+
+---
+
+## 🔲 Optional Tasks
+- [ ] Fix PCA9685 model
+- [ ] Model screws and nuts
