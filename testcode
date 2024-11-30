@@ -1,0 +1,103 @@
+import time
+from adafruit_pca9685 import PCA9685
+from board import SCL, SDA
+import busio
+
+# Initialize I2C and PCA9685
+i2c = busio.I2C(SCL, SDA)
+pca = PCA9685(i2c)
+pca.frequency = 50  # Set frequency to 50Hz for servos
+
+# Servo calibration
+MIN_ANGLE = 0     # Minimum angle for the servo
+MAX_ANGLE = 180   # Maximum angle for the servo
+MIN_PWM = 150     # Minimum PWM pulse length
+MAX_PWM = 600     # Maximum PWM pulse length
+
+# Map angle to PWM
+def angle_to_pwm(angle):
+    return int(MIN_PWM + (angle - MIN_ANGLE) * (MAX_PWM - MIN_PWM) / (MAX_ANGLE - MIN_ANGLE))
+
+# Move servo to a specific angle
+def move_servo(joint, angle):
+    if 0 <= joint <= 6 and MIN_ANGLE <= angle <= MAX_ANGLE:
+        pwm_value = angle_to_pwm(angle)
+        pca.channels[joint].duty_cycle = int(pwm_value * 65535 / 4096)  # Convert to 16-bit duty cycle
+        print(f"Moving joint {joint} to angle {angle}° (PWM: {pwm_value})")
+    else:
+        print("Invalid joint or angle.")
+
+# Test each joint
+def test_joints():
+    print("Testing each joint...")
+    for joint in range(7):
+        print(f"Testing joint {joint}...")
+        # Move joint to minimum angle
+        move_servo(joint, MIN_ANGLE)
+        time.sleep(1)
+        # Move joint to maximum angle
+        move_servo(joint, MAX_ANGLE)
+        time.sleep(1)
+        # Reset joint to neutral position (90°)
+        move_servo(joint, 90)
+        time.sleep(1)
+    print("Joint testing complete!")
+
+# Lift an object
+def lift_object():
+    print("Executing lift sequence...")
+    # Example sequence for lifting an object
+    sequence = [
+        (0, 90),  # Base joint neutral
+        (1, 45),  # Lower arm up
+        (2, 45),  # Middle arm up
+        (3, 90),  # Wrist neutral
+        (4, 90),  # Gripper open
+    ]
+    # Execute the sequence
+    for joint, angle in sequence:
+        move_servo(joint, angle)
+        time.sleep(1)
+
+    # Simulate gripping the object
+    print("Gripping object...")
+    move_servo(4, 30)  # Close gripper
+    time.sleep(1)
+
+    # Lift the object
+    print("Lifting object...")
+    move_servo(2, 30)  # Move middle arm higher
+    time.sleep(1)
+
+    # Reset to neutral
+    print("Returning to neutral...")
+    for joint in range(7):
+        move_servo(joint, 90)
+        time.sleep(0.5)
+
+# Main loop
+try:
+    print("Robotic Arm Control")
+    while True:
+        print("\nOptions:")
+        print("1. Test Joints")
+        print("2. Lift Object")
+        print("3. Exit")
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            test_joints()
+        elif choice == "2":
+            lift_object()
+        elif choice == "3":
+            break
+        else:
+            print("Invalid choice. Please try again.")
+
+except KeyboardInterrupt:
+    print("\nExiting...")
+finally:
+    # Turn off all servos
+    for i in range(7):
+        pca.channels[i].duty_cycle = 0
+    pca.deinit()
