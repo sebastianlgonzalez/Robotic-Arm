@@ -1,0 +1,99 @@
+import time
+from adafruit_servokit import ServoKit
+
+# Initialize the PCA9685 using the default address (0x40).
+kit = ServoKit(channels=16)
+
+# Define servo channels for your robotic arm
+servo_channels = {
+    # Shoulder joint has three servos: channels 0, 1, 2
+    'shoulder': [0, 1, 2],
+    # Elbow joint has one servo: channel 3
+    'elbow': 3,
+    # Wrist joint has three servos: channels 4, 5, 6
+    'wrist': [4, 5, 6],
+    # Gripper servo: channel 7 (if you have a gripper)
+    'gripper': 7
+}
+
+# Set the pulse width range for your servos if necessary
+# Example: kit.servo[0].set_pulse_width_range(min_pulse, max_pulse)
+
+# Function to set angles for multiple servos in a joint
+def set_joint_angles(joint_name, angle):
+    if isinstance(servo_channels[joint_name], list):  # Multiple servos in this joint
+        for channel in servo_channels[joint_name]:
+            kit.servo[channel].angle = angle
+            time.sleep(0.01)  # Small delay between setting each servo
+    else:
+        # Single servo in this joint
+        kit.servo[servo_channels[joint_name]].angle = angle
+
+# Move servos to initial positions
+def initialize_servos():
+    initial_positions = {
+        'shoulder': 90,
+        'elbow': 90,
+        'wrist': 90,
+        'gripper': 90  # Adjust if you have a gripper
+    }
+    for joint, angle in initial_positions.items():
+        set_joint_angles(joint, angle)
+        time.sleep(0.1)
+
+# Function to move to a position
+def move_to_position(positions, delay=0.02):
+    for joint, angle in positions.items():
+        set_joint_angles(joint, angle)
+        time.sleep(delay)
+
+def main():
+    try:
+        # Initialize servos
+        initialize_servos()
+        time.sleep(1)
+
+        # Step 1: Extend the arm downwards to pick up an object
+        pick_position = {
+            'shoulder': 120,  # Adjust angle to lower the arm
+            'elbow': 60,     # Adjust angle for reaching down
+            'wrist': 90,
+            'gripper': 90
+        }
+        move_to_position(pick_position)
+        time.sleep(1)
+
+        # Step 2: Close gripper to pick up object (if applicable)
+        set_joint_angles('gripper', 45)  # Adjust angle to close gripper
+        time.sleep(1)
+
+        # Step 3: Lift the object up by one inch (~2.54 cm)
+        lift_position = pick_position.copy()
+        lift_position['shoulder'] -= 10  # Adjust to lift up
+        lift_position['elbow'] += 10    # Adjust to lift up
+        move_to_position(lift_position)
+        time.sleep(1)
+
+        # Step 4: Move arm 10 cm to the right
+        # Assuming base rotation is not part of the configuration
+        # Adjust wrist joint to simulate moving right
+        move_right_position = lift_position.copy()
+        move_right_position['wrist'] = 105  # Adjust wrist angle
+        move_to_position(move_right_position)
+        time.sleep(1)
+
+        # Step 5: Open gripper to drop the object (if applicable)
+        set_joint_angles('gripper', 90)  # Adjust angle to open gripper
+        time.sleep(1)
+
+        # Return to initial position
+        initialize_servos()
+        time.sleep(1)
+
+    except KeyboardInterrupt:
+        # Reset servos to initial positions on Ctrl+C
+        initialize_servos()
+        print("Program interrupted and servos returned to initial positions.")
+
+if __name__ == '__main__':
+    main()
