@@ -1,0 +1,80 @@
+import time
+import keyboard 
+from adafruit_pca9685 import PCA9685
+from board import SCL, SDA
+import busio
+
+i2c = busio.I2C(SCL, SDA)
+pca = PCA9685(i2c)
+pca.frequency = 50 
+
+MIN_ANGLE = 0    
+MAX_ANGLE = 270  
+MIN_PWM = 150     
+MAX_PWM = 1000 
+
+def angle_to_pwm(angle):
+    return int(MIN_PWM + (angle - MIN_ANGLE) * (MAX_PWM - MIN_PWM) / (MAX_ANGLE - MIN_ANGLE))
+
+def move_servo(joint, angle):
+    if 0 <= joint <= 6 and MIN_ANGLE <= angle <= MAX_ANGLE:
+        pwm_value = angle_to_pwm(angle)
+        pca.channels[joint].duty_cycle = int(pwm_value * 65535 / 4096)  # Convert to 16-bit duty cycle
+        print(f"Moving joint {joint} to angle {angle}° (PWM: {pwm_value})")
+    else:
+        print("Invalid joint or angle.")
+
+def control_servo():
+    angle_step = 10  # Set the increment/decrement for the servo movement
+    motor_map = {
+        'w': (0, angle_step),  # Motor 0 up
+        's': (0, -angle_step),  # Motor 0 down
+        'e': (1, angle_step),  # Motor 1 up
+        'd': (1, -angle_step),  # Motor 1 down
+        'r': (2, angle_step),  # Motor 2 up
+        'f': (2, -angle_step),  # Motor 2 down
+        't': (3, angle_step),  # Motor 3 up
+        'g': (3, -angle_step),  # Motor 3 down
+        'y': (4, angle_step),  # Motor 4
+        'h': (4, -angle_step),  # Motor 4
+        'u': (5, angle_step),  # Motor 5 up
+        'j': (5, -angle_step),  # Motor 5 down
+        'i': (6, angle_step),  # Motor 6 up
+        'k': (6, -angle_step),  # Motor 6 down
+    }
+
+    motor_angles = [90] * 7 
+
+    print("Use the following keys to control the servos:")
+    print("w - Shoulder base motor up, s - Shoulder base motor down")
+    print("e - Shoulder motor #2 up, d - Shoulder motor #2 down")
+    print("r - Shoulder motor #3 up, f - Shoulder motor #3 down")
+    print("t - Elbow motor up, g - Elbow motor down")
+    print("y - Wrist motor #1 up, h - Wrist motor #1 down")
+    print("u - Wrist motor #2 up, j - Wrist motor #2 down")
+    print("i - Wrist motor #3 up, k - Wrist motor #3 6 down")
+    print("Press 'q' to quit.")
+
+    while True:
+        if keyboard.is_pressed('q'): 
+            print("Exiting...")
+            break
+
+        for key, (joint, angle_change) in motor_map.items():
+            if keyboard.is_pressed(key):
+                new_angle = motor_angles[joint] + angle_change
+                if MIN_ANGLE <= new_angle <= MAX_ANGLE:
+                    motor_angles[joint] = new_angle
+                    move_servo(joint, new_angle)
+                    time.sleep(0.2)  # Add a small delay to avoid multiple inputs too quickly
+
+try:
+    print("Robotic Arm Control")
+    control_servo()
+
+except KeyboardInterrupt:
+    print("\nExiting...")
+finally:
+    for i in range(7):
+        pca.channels[i].duty_cycle = 0
+    pca.deinit()
